@@ -19,12 +19,10 @@ class OpenMeteoRepository:
                 )
             ''')
             conn.execute('''
-                CREATE TABLE IF NOT EXISTS data_processed (
+                CREATE TABLE IF NOT EXISTS data (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    period_start DATETIME UNIQUE,
-                    avg_temperature REAL,
-                    min_temperature REAL,
-                    max_temperature REAL
+                    ds DATETIME UNIQUE,
+                    y REAL
                 )
             ''')
 
@@ -63,6 +61,36 @@ class OpenMeteoRepository:
             self.logger.error(f"Erreur d'insertion: {str(e)}")
             raise
 
+    def insert_data(self, df):
+        """
+        Insère les données d'un DataFrame pandas dans SQLite
+
+        Args:
+            df: DataFrame avec colonnes 'ds' (datetime) et 'y' (mesures)
+        """
+        try:
+            data = [
+                (dt.isoformat(), temp)
+                for dt, temp in zip(df['ds'], df['y'])
+            ]
+
+            with self._get_connection() as conn:
+                conn.executemany('''
+                    INSERT OR IGNORE INTO data 
+                    (ds, y) 
+                    VALUES (?, ?)
+                ''', data)
+                conn.commit()
+
+            self.logger.info(f"Insertion réussie de {len(data)} mesures")
+
+        except KeyError as e:
+            self.logger.error(f"Colonne manquante: {str(e)}")
+            raise ValueError("Le DataFrame doit contenir les colonnes 'ds' et 'y'")
+        except Exception as e:
+            self.logger.error(f"Erreur d'insertion: {str(e)}")
+            raise
+
     def find_all_by_table(self, table):
         """
         Récupère toutes les lignes d'une table donnée.
@@ -74,7 +102,7 @@ class OpenMeteoRepository:
             list of tuple: Toutes les lignes de la table.
         """
         # Sécurisation du nom de table pour éviter l'injection SQL
-        if table not in ('row', 'data_processed'):
+        if table not in ('row', 'data'):
             raise ValueError("Table inconnue")
         sql = f"SELECT * FROM {table}"
         with self._get_connection() as conn:
