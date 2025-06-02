@@ -5,3 +5,10 @@ Ce script doit contenir l'implémentation des endpoints pour les fonctionnalité
 - Récupération des prédictions combinées avec des données réelles observées pour une période donnée
 """
 
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/predict")
+async def predict():
+    return {"message": "Bienvenue sur l'API!"}

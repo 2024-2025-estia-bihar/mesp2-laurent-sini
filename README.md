@@ -12,5 +12,10 @@ Instructions to install dependencies, run, build, test
 pip install -r requirements.txt
 ```
 
+Lancement de l'API
+```bash
+uvicorn api.main:app --reload
+```
+
 # CI/CD steps
 Short description of each step with their outputs (if any)
