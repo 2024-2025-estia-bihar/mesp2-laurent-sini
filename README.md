@@ -17,5 +17,11 @@ Lancement de l'API
 uvicorn api.main:app --reload
 ```
 
+Test localment l'API
+```Bash
+docker build -t my-api:local ./api
+docker run -p 8080:8000 my-api:local
+```
+
 # CI/CD steps
 Short description of each step with their outputs (if any)
