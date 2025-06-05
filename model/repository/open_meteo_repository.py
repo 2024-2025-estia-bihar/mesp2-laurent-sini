@@ -15,7 +15,8 @@ class OpenMeteoRepository:
                 CREATE TABLE IF NOT EXISTS row (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp DATETIME UNIQUE,
-                    temperature_2m REAL
+                    temperature_2m REAL,
+                    relative_humidity_2m REAL
                 )
             ''')
             conn.execute('''
@@ -25,6 +26,13 @@ class OpenMeteoRepository:
                     y REAL
                 )
             ''')
+            conn.execute('''
+                            CREATE TABLE IF NOT EXISTS exogene (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                ds DATETIME UNIQUE,
+                                relative_humidity_2m REAL
+                            )
+                        ''')
 
     def _get_connection(self):
         """Crée une nouvelle connexion à la base"""
@@ -40,15 +48,15 @@ class OpenMeteoRepository:
         try:
             # Conversion des données en tuples (timestamp ISO, température)
             data = [
-                (dt.isoformat(), temp)
-                for dt, temp in zip(df['time'], df['temperature_2m'])
+                (dt.isoformat(), temp, rh)
+                for dt, temp, rh in zip(df['time'], df['temperature_2m'], df['relative_humidity_2m'])
             ]
 
             with self._get_connection() as conn:
                 conn.executemany('''
                     INSERT OR IGNORE INTO row 
-                    (timestamp, temperature_2m) 
-                    VALUES (?, ?)
+                    (timestamp, temperature_2m, relative_humidity_2m) 
+                    VALUES (?, ?, ?)
                 ''', data)
                 conn.commit()
 
@@ -91,6 +99,36 @@ class OpenMeteoRepository:
             self.logger.error(f"Erreur d'insertion: {str(e)}")
             raise
 
+    def insert_exogene(self, df):
+        """
+        Insère les données d'un DataFrame pandas dans SQLite
+
+        Args:
+            df: DataFrame avec colonnes 'ds' (datetime) et 'y' (mesures)
+        """
+        try:
+            data = [
+                (dt.isoformat(), rh)
+                for dt, rh in zip(df['ds'], df['relative_humidity_2m'])
+            ]
+
+            with self._get_connection() as conn:
+                conn.executemany('''
+                    INSERT OR IGNORE INTO exogene 
+                    (ds, relative_humidity_2m) 
+                    VALUES (?, ?)
+                ''', data)
+                conn.commit()
+
+            self.logger.info(f"Insertion réussie de {len(data)} mesures")
+
+        except KeyError as e:
+            self.logger.error(f"Colonne manquante: {str(e)}")
+            raise ValueError("Le DataFrame doit contenir les colonnes 'ds' et 'y'")
+        except Exception as e:
+            self.logger.error(f"Erreur d'insertion: {str(e)}")
+            raise
+
     def find_all_by_table(self, table):
         """
         Récupère toutes les lignes d'une table donnée.
@@ -102,11 +140,10 @@ class OpenMeteoRepository:
             list of tuple: Toutes les lignes de la table.
         """
         # Sécurisation du nom de table pour éviter l'injection SQL
-        if table not in ('row', 'data'):
+        if table not in ('row', 'data', 'exogene'):
             raise ValueError("Table inconnue")
         sql = f"SELECT * FROM {table}"
         with self._get_connection() as conn:
             cursor = conn.execute(sql)
             return cursor.fetchall()
-
 

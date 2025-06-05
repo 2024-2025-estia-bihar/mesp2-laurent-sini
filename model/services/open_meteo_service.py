@@ -9,7 +9,7 @@ import pandas as pd
 class OpenMeteoService:
 
     def __init__(self):
-        self.url = "https://archive-api.open-meteo.com/v1/archive?latitude=52.52&longitude=13.41&hourly=temperature_2m&start_date=2023-01-01&end_date=2024-12-31"
+        self.url = "https://archive-api.open-meteo.com/v1/archive?latitude=52.52&longitude=13.41&hourly=temperature_2m,relative_humidity_2m&start_date=2023-01-01&end_date=2024-12-31"
 
         cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
         retry_session = retry(cache_session, retries=5, backoff_factor=0.2)  # Correction ici
@@ -21,6 +21,7 @@ class OpenMeteoService:
 
             hourly_data = response[0].Hourly()
             temperature_np = hourly_data.Variables(0).ValuesAsNumpy()
+            humidity_np = hourly_data.Variables(1).ValuesAsNumpy()
 
             # Génération des timestamps
             start_time = hourly_data.Time()
@@ -33,7 +34,8 @@ class OpenMeteoService:
 
             return pd.DataFrame({
                 'time': dates,
-                'temperature_2m': temperature_np
+                'temperature_2m': temperature_np,
+                'relative_humidity_2m': humidity_np
             })
         except Exception as e:
             print(f"Erreur API : {e}")
