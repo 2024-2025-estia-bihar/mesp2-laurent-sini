@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.metrics import mean_absolute_percentage_error, mean_squared_error, r2_score, mean_absolute_error
 
 
-def convert_to_dataframe(data_of_database, table_type: str) -> pd.DataFrame:
+def convert_to_dataframe(data_of_database) -> pd.DataFrame:
     """
     Convertit les données brutes en DataFrame avec renommage des colonnes spécifiques pour 'row'.
 
@@ -15,25 +15,11 @@ def convert_to_dataframe(data_of_database, table_type: str) -> pd.DataFrame:
         pd.DataFrame: DataFrame formaté avec colonnes standardisées
     """
 
-    # Mapping des colonnes selon la table
-    columns_map = {
-        'row': ['id', 'timestamp', 'temperature_2m', 'relative_humidity_2m'],
-        'data': ['id', 'ds', 'y'],
-        'exogen': ['id', 'ds', 'relative_humidity_2m']
-    }
-
     # Création du DataFrame
-    df = pd.DataFrame(data_of_database, columns=columns_map[table_type])
+    df = pd.DataFrame(data_of_database)
 
     # Suppression de la colonne id
     df = df.drop(columns=['id'])
-
-    # Renommage des colonnes pour la table 'row'
-    if table_type == 'row':
-        df = df.rename(columns={
-            'timestamp': 'ds',
-            'temperature_2m': 'y'
-        })
 
     # Conversion des dates en format datetime
     if 'ds' in df.columns:
