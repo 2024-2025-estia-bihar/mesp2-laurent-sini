@@ -1,7 +1,7 @@
 from sqlalchemy import insert
 from sqlalchemy.orm import Session
 
-from model.entity import DataOpenMeteo
+from model.entity.data_open_meteo import DataOpenMeteo
 from model.repository.BaseRepository import BaseRepository
 
 class DataOpenMeteoRepository(BaseRepository):

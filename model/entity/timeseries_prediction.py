@@ -1,7 +1,6 @@
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, DateTime, Float, String, JSON, Index
 
-Base = declarative_base()
+from model.entity.base import Base
 
 class TimeSeriesPrediction(Base):
     __tablename__ = 'time_series_prediction'

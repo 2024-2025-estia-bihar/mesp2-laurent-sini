@@ -1,7 +1,6 @@
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, DateTime, Float
 
-Base = declarative_base()
+from model.entity.base import Base
 
 class ExogOpenMeteo(Base):
     __tablename__ = 'exog_open_meteo'

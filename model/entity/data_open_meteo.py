@@ -1,13 +1,12 @@
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, DateTime, Float
 
-Base = declarative_base()
+from model.entity.base import Base
 
 class DataOpenMeteo(Base):
     __tablename__ = 'data_open_meteo'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    timestamp = Column(DateTime, unique=True)
-    temperature_2m = Column(Float)
+    ds = Column(DateTime, unique=True)
+    y = Column(Float)
 
 
