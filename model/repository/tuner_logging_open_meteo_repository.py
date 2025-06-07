@@ -1,13 +1,13 @@
 from sqlalchemy import insert
 from sqlalchemy.orm import Session
 
-from model.entity.exog_open_meteo import ExogOpenMeteo
+from model.entity.tuner_logging_open_meteo import TunerLoggingOpenMeteo
 from model.repository.BaseRepository import BaseRepository
 
-class ExogOpenMeteoRepository(BaseRepository):
+class TunerLoggingOpenMeteoRepository(BaseRepository):
 
     def __init__(self, session: Session):
-        super().__init__(session, ExogOpenMeteo)
+        super().__init__(session, TunerLoggingOpenMeteo)
 
     def insert_from_dataframe(self, df):
         """Version optimisée avec SQLAlchemy Core"""
@@ -19,7 +19,7 @@ class ExogOpenMeteoRepository(BaseRepository):
             for _, row in df.iterrows()
         ]
 
-        stmt = insert(ExogOpenMeteo.__table__)
+        stmt = insert(TunerLoggingOpenMeteo.__table__)
 
         self.session.execute(stmt, data)
         self.session.commit()
