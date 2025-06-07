@@ -8,5 +8,6 @@ class DataOpenMeteo(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     ds = Column(DateTime, unique=True)
     y = Column(Float)
+    relative_humidity_2m = Column(Float)
 
 

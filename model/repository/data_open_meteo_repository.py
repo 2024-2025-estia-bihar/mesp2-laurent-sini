@@ -1,4 +1,4 @@
-from sqlalchemy import insert
+from sqlalchemy import insert, update
 from sqlalchemy.orm import Session
 
 from model.entity.data_open_meteo import DataOpenMeteo
@@ -14,7 +14,8 @@ class DataOpenMeteoRepository(BaseRepository):
         data = [
             {
                 "ds": row['ds'],
-                "y": row['y'],  # Nom exact de la colonne
+                "y": row['y'],
+                "relative_humidity_2m": row['relative_humidity_2m'],
             }
             for _, row in df.iterrows()
         ]

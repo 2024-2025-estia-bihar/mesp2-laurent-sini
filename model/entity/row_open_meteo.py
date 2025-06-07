@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, DateTime, Float, UniqueConstraint
+from sqlalchemy import Column, Integer, DateTime, Float
 
 from model.entity.base import Base
 

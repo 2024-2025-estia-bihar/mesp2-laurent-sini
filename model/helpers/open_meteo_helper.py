@@ -38,3 +38,10 @@ def metrics_result(forcast, val):
     print(f"MAE : {mae:.2f}")  # Unités originales
     print(f"RMSE : {rmse:.2f}")
     print(f"R² : {r2:.3f}")  # Entre 0 et 1
+
+    return {
+        "MAPE ": mape,
+        "MAE ": mae,
+        "RMSE ": rmse,
+        "R2 ": r2,
+    }
