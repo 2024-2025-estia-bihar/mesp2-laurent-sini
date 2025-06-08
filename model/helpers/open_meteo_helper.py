@@ -27,12 +27,14 @@ def convert_to_dataframe(data_of_database) -> pd.DataFrame:
 
     return df
 
-def metrics_result(forcast, val):
+def metrics_result(pred, val):
 
-    mape = mean_absolute_percentage_error(val['y'], forcast.predicted_mean) * 100  # Correct
-    mae = mean_absolute_error(val['y'], forcast.predicted_mean)
-    rmse = np.sqrt(mean_squared_error(val['y'], forcast.predicted_mean))
-    r2 = r2_score(val['y'], forcast.predicted_mean)
+    pred_series = pd.Series(pred, index=val.index)
+
+    mape = mean_absolute_percentage_error(val, pred_series) * 100  # Correct
+    mae = mean_absolute_error(val, pred_series)
+    rmse = np.sqrt(mean_squared_error(val, pred_series))
+    r2 = r2_score(val, pred_series)
 
     print(f"MAPE : {mape:.1f}%")
     print(f"MAE : {mae:.2f}")  # Unités originales
