@@ -8,11 +8,21 @@ import pandas as pd
 
 class OpenMeteoService:
 
-    def __init__(self):
-        self.url = "https://archive-api.open-meteo.com/v1/archive?latitude=52.52&longitude=13.41&hourly=temperature_2m,relative_humidity_2m&start_date=2023-01-01&end_date=2024-12-31"
+    def __init__(self, start_date=None, end_date=None):
+        # Définir start_date avec valeur par défaut
+        if start_date is None:
+            start_date = "2023-01-01"
 
+        # Calculer end_date = hier si non fourni
+        if end_date is None:
+            end_date = (datetime.today() - timedelta(days=2)).strftime("%Y-%m-%d")
+
+        # Construction dynamique de l'URL
+        self.url = f"https://archive-api.open-meteo.com/v1/archive?latitude=52.52&longitude=13.41&hourly=temperature_2m,relative_humidity_2m&start_date={start_date}&end_date={end_date}"
+
+        # Configuration client API
         cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
-        retry_session = retry(cache_session, retries=5, backoff_factor=0.2)  # Correction ici
+        retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
         self.openmeteo = openmeteo_requests.Client(session=retry_session)
 
     def get_meteo(self):

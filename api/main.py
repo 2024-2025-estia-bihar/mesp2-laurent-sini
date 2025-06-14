@@ -12,3 +12,7 @@ app = FastAPI()
 @app.get("/predict")
 async def predict():
     return {"message": "Bienvenue sur l'API!"}
+
+@app.get("/version")
+async def version():
+    return {"message": "Version 1.0.0"}

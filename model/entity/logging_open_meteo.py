@@ -8,7 +8,8 @@ class TunerLoggingOpenMeteo(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     timestamp = Column(DateTime)  # Date/heure de la prédiction
     model = Column(String)  # 'ARIMA', 'SARIMA', 'Prophet', etc.
-    aic = Column(Float, nullable=True)
+    model_id = Column(String, default=None)
+    score = Column(Float, nullable=True)
     params = Column(JSON)
     results = Column(JSON)
 
@@ -16,5 +17,5 @@ class TunerLoggingOpenMeteo(Base):
         return (f"Timestamp: {self.timestamp}\n"
                 f"Model: {self.model}\n"
                 f"Params: {self.params}\n"
-                f"AIC: {self.aic}\n"
+                f"Score: {self.score}\n"
                 f"Results: {self.results}")

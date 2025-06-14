@@ -13,9 +13,9 @@ class DatabaseManager:
         self.session = sessionmaker(bind=self.engine)()
         return self.session
 
-    def connect_postgres(self, user, password, host, port, database):
+    def connect_postgres(self, user, password, host, database):
         """Connexion PostgreSQL"""
-        url = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+        url = f"postgresql://{user}:{password}@{host}:5432/{database}"
         self.engine = create_engine(url)
         self.session = sessionmaker(bind=self.engine)()
         return self.session
