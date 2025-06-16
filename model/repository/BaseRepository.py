@@ -24,4 +24,4 @@ class BaseRepository:
         return self.session.query(self.model).filter_by(**kwargs)
 
     def get_last_row(self):
-        return self.session.query(self.model).order_by(self.model.ds.desc()).first()
+        return self.session.query(self.model).order_by(self.model.time.desc()).first()

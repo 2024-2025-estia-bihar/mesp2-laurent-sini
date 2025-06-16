@@ -2,8 +2,8 @@ from sqlalchemy import Column, Integer, DateTime, String, JSON, Index, Float
 
 from model.entity.base import Base
 
-class TunerLoggingOpenMeteo(Base):
-    __tablename__ = 'logging_tuner_open_meteo'
+class LoggingTimeseries(Base):
+    __tablename__ = 'logging_timeseries'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     timestamp = Column(DateTime)  # Date/heure de la prédiction

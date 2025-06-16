@@ -1,26 +1,26 @@
 from sqlalchemy import insert
 from sqlalchemy.orm import Session
 
-from model.entity.row_open_meteo import RowOpenMeteo
+from model.entity.data_process_timeseries import DataProcessTimeseries
 from model.repository.BaseRepository import BaseRepository
 
-class RowOpenMeteoRepository(BaseRepository):
+class DataProcessTimeSeriesRepository(BaseRepository):
 
     def __init__(self, session: Session):
-        super().__init__(session, RowOpenMeteo)
+        super().__init__(session, DataProcessTimeseries)
 
     def insert_from_dataframe(self, df):
         """Version optimisée avec SQLAlchemy Core"""
         data = [
             {
-                "timestamp": row['time'],
-                "temperature_2m": row['temperature_2m'],  # Nom exact de la colonne
-                "relative_humidity_2m": row['relative_humidity_2m']
+                "ds": row['ds'],
+                "y": row['y'],
+                "relative_humidity_2m": row['relative_humidity_2m'],
             }
             for _, row in df.iterrows()
         ]
 
-        stmt = insert(RowOpenMeteo.__table__)
+        stmt = insert(DataProcessTimeseries.__table__)
 
         self.session.execute(stmt, data)
         self.session.commit()

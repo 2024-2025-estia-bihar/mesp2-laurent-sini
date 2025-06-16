@@ -2,8 +2,8 @@ from sqlalchemy import Column, Integer, DateTime, Float
 
 from model.entity.base import Base
 
-class DataOpenMeteo(Base):
-    __tablename__ = 'data_open_meteo'
+class DataProcessTimeseries(Base):
+    __tablename__ = 'data_process_timeseries'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     ds = Column(DateTime, unique=True)

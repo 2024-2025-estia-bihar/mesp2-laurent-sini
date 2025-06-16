@@ -1,16 +1,16 @@
 from datetime import datetime
 
-from model.entity.logging_open_meteo import TunerLoggingOpenMeteo
-from model.repository.logging_open_meteo_repository import LoggingOpenMeteoRepository
+from model.entity.logging_timeseries import LoggingTimeseries
+from model.repository.logging_timeseries_repository import LoggingTimeseriesRepository
 
 
 class LoggerManager:
     def __init__(self, session):
-        self.repository = LoggingOpenMeteoRepository(session)
+        self.repository = LoggingTimeseriesRepository(session)
 
     def log_training(self, model_name, score, params, results):
         """Log les paramètres d'entraînement d'un modèle"""
-        tuner_logging = TunerLoggingOpenMeteo(
+        tuner_logging = LoggingTimeseries(
             timestamp=datetime.now(),
             model=model_name,
             score=score,
