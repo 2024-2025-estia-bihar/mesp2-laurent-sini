@@ -1,4 +1,4 @@
-from sqlalchemy import insert
+from sqlalchemy import insert, select, func
 from sqlalchemy.orm import Session
 
 from model.entity.logging_timeseries import LoggingTimeseries
@@ -23,3 +23,30 @@ class LoggingTimeseriesRepository(BaseRepository):
 
         self.session.execute(stmt, data)
         self.session.commit()
+
+    def get_best_model(self)->LoggingTimeseries:
+        """Retourne le LoggingTimeseries avec le score le plus bas,
+        en excluant les model_id vides ou contenant 'notebook'."""
+        subquery = (
+            select(func.min(LoggingTimeseries.score))
+            .where(
+                LoggingTimeseries.model_id.isnot(None),
+                LoggingTimeseries.model_id != "",
+                LoggingTimeseries.model_id.notlike("%notebook%")
+            )
+            .scalar_subquery()
+        )
+        stmt = (
+            select(LoggingTimeseries)
+            .where(
+                LoggingTimeseries.score == subquery,
+                LoggingTimeseries.model_id.isnot(None),
+                LoggingTimeseries.model_id != "",
+                LoggingTimeseries.model_id.notlike("%notebook%")
+            )
+            .limit(1)
+        )
+        result = self.session.execute(stmt).scalar_one_or_none()
+        return result
+
+

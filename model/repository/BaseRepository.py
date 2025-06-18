@@ -20,6 +20,9 @@ class BaseRepository:
     def delete(self, entity):
         self.session.delete(entity)
 
+    def delete_all(self):
+        self.session.query(self.model).delete()
+
     def filter(self, **kwargs):
         return self.session.query(self.model).filter_by(**kwargs)
 

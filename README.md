@@ -3,6 +3,22 @@ High-level description
 
 Data flow & architecture
 
+
+Charge les données brute de l'API open-meteo
+```bash
+py .\data\fetch_data.py
+```
+
+Execution du pipeline d'entrainement
+```bash
+py -m model.pipeline.PipelineOrchestrator
+```
+
+Execution du pipeline de prediction par approche batch
+```bash
+py -m model.pipeline.PipelineBatchPredictor
+```
+
 Main technologies used and for which purpose
 
 # Running locally

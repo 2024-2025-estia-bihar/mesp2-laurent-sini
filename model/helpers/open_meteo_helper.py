@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_percentage_error, mean_squared_error, r2_score, mean_absolute_error
@@ -36,14 +38,11 @@ def metrics_result(pred, val):
     rmse = np.sqrt(mean_squared_error(val, pred_series))
     r2 = r2_score(val, pred_series)
 
-    print(f"MAPE : {mape:.1f}%")
-    print(f"MAE : {mae:.2f}")  # Unités originales
-    print(f"RMSE : {rmse:.2f}")
-    print(f"R² : {r2:.3f}")  # Entre 0 et 1
+    logging.info(f"MAPE : {mape:.1f}% | MAE : {mae:.2f} | RMSE : {rmse:.2f} | R2 : {r2:.2f}")
 
     return {
-        "MAPE ": mape,
-        "MAE ": mae,
-        "RMSE ": rmse,
-        "R2 ": r2,
+        "MAPE": mape,
+        "MAE": mae,
+        "RMSE": rmse,
+        "R2": r2,
     }

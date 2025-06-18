@@ -1,4 +1,9 @@
+import json
 import logging
+import uuid
+
+from model.repository.logging_timeseries_repository import LoggingTimeseriesRepository
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
@@ -15,7 +20,7 @@ from model.services.database_manager import DatabaseManager
 from model.services.logger_manager import LoggerManager
 
 
-class PipelineOrchestrator:
+class PipelineBatchPredictor:
     def __init__(self,
                  data_manager: DataManagerInterface,
                  logger_database: LoggerManager,
@@ -29,7 +34,6 @@ class PipelineOrchestrator:
 
     def run(self):
 
-
         logging.info("Lancement du pipeline")
 
         logging.info("Etape 1 - Nettoyage des données")
@@ -37,36 +41,20 @@ class PipelineOrchestrator:
         df = self.data_manager.cleanData(df)
         df = self.data_manager.transformData(df)
 
-        self.data_manager.saveData(df)
-        train, test = self.data_manager.splitData(df)
+        logging.info("Etape 2 - Transformation des données")
+        data_future = self.data_manager.loadFutureData(df)
+        train_future, test_future = self.feature_manager.transformData(df, data_future)
 
-        logging.info("Etape 2 - Recherche des hyperparameters")
-        self.model_manager.tune(train)
+        best_n_lags = self.model_manager.params['n_lags']
+        X_train, y_train, X_test, y_test = self.feature_manager.lagger(train_future, test_future, best_n_lags)
 
-        logging.info("Etape 3 - Recherche des features")
-        train, test = self.feature_manager.transformData(train, test)
+        logging.info("Etape 3 - Evaluation")
+        self.model_manager.loadBestModel()
+        results, predict = self.model_manager.eval(X_test, y_test)
 
-        best_n_lags=self.model_manager.params.best_params['n_lags']
-        X_train, y_train, X_test, y_test = self.feature_manager.lagger(train, test, best_n_lags)
-
-        logging.info("Etape 4 - Entrainement")
-        self.model_manager.train(X_train, y_train)
-
-        logging.info("Etape 5 - Evaluation")
-        results, _ = self.model_manager.eval(X_test, y_test)
-
-        logging.info("Etape 6 - Results")
-        self.model_manager.save()
-        self.logger_database.log_training(
-            'XGBRegressor',
-            self.model_manager.params.best_value,
-            self.model_manager.params.best_params,
-            results,
-            self.model_manager.model_id,
-        )
+        self.data_manager.savePredict(predict, self.model_manager.model_id)
 
         logging.info("Finished pipeline")
-
 
 if __name__ == '__main__':
     from model.pipeline.timeseries.DataManager import DataManager
@@ -78,13 +66,21 @@ if __name__ == '__main__':
 
     Base.metadata.create_all(db_manager.engine)
 
-    xgb = XGBoostManager()
+    logging_timeseries_repository = LoggingTimeseriesRepository(db_manager.session)
 
-    pipelineOrchestrator = PipelineOrchestrator(
+    xgb = XGBoostManager()
+    best_model = logging_timeseries_repository.get_best_model()
+
+    xgb.model_id = best_model.model_id + '_'+ str(uuid.uuid4())
+    xgb.params = best_model.params
+
+    PipelineBatchPredictor = PipelineBatchPredictor(
         data_manager=DataManager(db_manager),
         model_manager=xgb,
         feature_manager=FeatureManager(xgb),
         logger_database=logger_manager
     )
 
-    pipelineOrchestrator.run()
+    PipelineBatchPredictor.run()
+
+    db_manager.session.close()

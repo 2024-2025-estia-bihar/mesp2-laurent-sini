@@ -57,3 +57,15 @@ class DataManagerInterface(ABC):
         Cette méthode doit être implémentée pour sauvegarder les données transformées.
         """
         pass
+
+    @abstractmethod
+    def splitData(self, df: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
+        pass
+
+    @abstractmethod
+    def loadFutureData(self, df: pd.DataFrame) -> pd.DataFrame:
+        pass
+
+    @abstractmethod
+    def savePredict(self, predict: pd.DataFrame, model_id: str) -> None:
+        pass

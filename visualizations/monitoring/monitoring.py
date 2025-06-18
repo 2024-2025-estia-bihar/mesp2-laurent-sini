@@ -15,4 +15,5 @@ def match_val_predict(predicted_mean, val, model_name):
     plt.ylabel('Valeur')
     plt.legend()
     plt.grid(True)
-    plt.show()
+
+    return plt
