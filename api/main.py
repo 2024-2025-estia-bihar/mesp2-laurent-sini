@@ -124,11 +124,10 @@ async def combined_predictions(start_date: str, end_date: str):
         # Construire la réponse combinée
         combined_list = []
         for obs in observed:
-            pred = next((p for p in predicts if p.ds == obs.ds), None)
-
+            pred = next((p.y for p in predicts if p.ds == obs.ds), None)
             item = {
                 "ds": obs.ds.isoformat(),
-                "y_pred": pred.y ,
+                "y_pred": pred ,
                 "y": obs.y
             }
             combined_list.append(item)
