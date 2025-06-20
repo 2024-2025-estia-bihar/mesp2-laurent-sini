@@ -30,7 +30,7 @@ pip install -r requirements.txt
 
 Lancement de l'API
 ```bash
-uvicorn api.main:app --reload
+uvicorn api.main:app --reload --port=8080
 ```
 
 Test localment l'API
@@ -38,6 +38,8 @@ Test localment l'API
 docker build -t my-api:local ./api
 docker run -p 8080:8000 my-api:local
 ```
+
+Swagger accéssible a l'adresse
 
 # CI/CD steps
 Short description of each step with their outputs (if any)
