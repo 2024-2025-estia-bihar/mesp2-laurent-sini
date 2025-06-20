@@ -6,10 +6,11 @@ Ce script doit contenir l'implémentation des endpoints pour les fonctionnalité
 """
 import logging
 import os
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
+from urllib.parse import unquote
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from sqlalchemy import func
 
 from model.entity.data_predict_timeseries import DataPredictTimeseries
@@ -19,63 +20,23 @@ from model.services.database_manager import DatabaseManager
 
 load_dotenv()
 api_version = os.getenv("API_VERSION", "0.0.0")
+nb_days_predict = 7
 
 app = FastAPI()
 
-@app.get("/predictions/{date}")
-async def predictions(date: str):
-    db_manager = DatabaseManager()
-    try:
-        db_manager.init_connection()
-
-        target_date = datetime.strptime(date, "%Y-%m-%d").date()
-        start_dt = datetime.combine(target_date, time.min)
-        end_dt = datetime.combine(target_date, time.max)
-
-        champion = LoggingTimeseriesRepository(db_manager.session).get_best_model()
-
-        latest_model_query = (
-            db_manager.session.query(
-                DataPredictTimeseries.model_id,
-                func.max(DataPredictTimeseries.created_at).label('max_created_at')
-            )
-            .filter(
-                DataPredictTimeseries.model_id.contains(champion.model)
-            )
-            .group_by(DataPredictTimeseries.model_id)
-            .order_by(func.max(DataPredictTimeseries.created_at).desc())
-            .limit(1)
-            .subquery()
-        )
-
-        predicts = (
-            db_manager.session.query(DataPredictTimeseries)
-            .filter(
-                DataPredictTimeseries.ds >= start_dt,
-                DataPredictTimeseries.ds <= end_dt,
-                DataPredictTimeseries.model_id == latest_model_query.c.model_id
-            )
-            .all()
-        )
-
-        return {
-            "prediction": predicts,
-            "count": len(predicts),
-        }
-    except Exception as e:
-        logging.error(e)
-
-        return {
-            "predictions": [],
-            "error": str(e)
-        }
-    finally:
-        logging.info("Fin de predictions")
-        db_manager.session.close()
-
-
-@app.get("/predictions/combined/{start_date}/{end_date}")
+@app.get("/predictions/combined/{start_date}/{end_date}", responses={
+             200: {"description": "Données combinées récupérées avec succès"},
+             400: {"description": "Format de date invalide. Utiliser YYYY-MM-DD"}
+         })
 async def combined_predictions(start_date: str, end_date: str):
+    """
+    Récupère les données combinées (valeurs observées et prédictions du meilleur modèle) pour une période donnée.
+
+    - **start_date** : Date de début au format YYYY-MM-DD (exemple: 2025-06-01)
+    - **end_date** : Date de fin au format YYYY-MM-DD (exemple: 2025-06-07)
+    - **Retourne** : Une liste d'objets contenant, pour chaque timestamp, la valeur réelle observée et la prédiction associée.
+    """
+
     db_manager = DatabaseManager()
     try:
         db_manager.init_connection()
@@ -87,7 +48,6 @@ async def combined_predictions(start_date: str, end_date: str):
         # Récupérer le modèle champion
         champion = LoggingTimeseriesRepository(db_manager.session).get_best_model()
 
-        # Sous-requête pour le dernier modèle
         latest_model_query = (
             db_manager.session.query(
                 DataPredictTimeseries.model_id,
@@ -134,6 +94,10 @@ async def combined_predictions(start_date: str, end_date: str):
 
         return {"combined": combined_list}
 
+    except ValueError as e:
+        logging.error(e)
+        raise HTTPException(status_code=400, detail="Format de date invalide. Utilisez YYYY-MM-DD")
+
     except Exception as e:
         logging.error(e)
         return {"combined": [], "error": str(e)}
@@ -142,6 +106,95 @@ async def combined_predictions(start_date: str, end_date: str):
         db_manager.session.close()
 
 
+
+@app.get("/predictions/{date:path}", responses={
+    400: {"description": "La date est dans le passé ou trop loin dans le futur"},
+    200: {"description": "Prédictions récupérées avec succès"}
+})
+async def predictions(date: str):
+    """
+    Récupère les prédictions pour une date donnée.
+    - **date** : La date au format YYYY-MM-DD (exemple : 2025-06-20)
+    """
+
+    decoded_date = unquote(date)
+    date = decoded_date.replace("/", "-")
+
+    db_manager = DatabaseManager()
+    try:
+        db_manager.init_connection()
+
+
+
+        target_date = datetime.strptime(date, "%Y-%m-%d").date()
+        today = target_date.today()
+
+        if target_date < today:
+            raise HTTPException(status_code=400, detail="Les dates passées ne sont pas des prédictions")
+
+        max_future_date = today + timedelta(days=nb_days_predict)
+        if target_date > max_future_date:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Aucune prévision disponible pour cette date. Remonter à {nb_days_predict} jours maximum dans le futur."
+            )
+
+        start_dt = datetime.combine(target_date, time.min)
+        end_dt = datetime.combine(target_date, time.max)
+
+        champion = LoggingTimeseriesRepository(db_manager.session).get_best_model()
+
+        latest_model_query = (
+            db_manager.session.query(
+                DataPredictTimeseries.model_id,
+                func.max(DataPredictTimeseries.created_at).label('max_created_at')
+            )
+            .filter(
+                DataPredictTimeseries.model_id.contains(champion.model)
+            )
+            .group_by(DataPredictTimeseries.model_id)
+            .order_by(func.max(DataPredictTimeseries.created_at).desc())
+            .limit(1)
+            .subquery()
+        )
+
+        predicts = (
+            db_manager.session.query(DataPredictTimeseries)
+            .filter(
+                DataPredictTimeseries.ds >= start_dt,
+                DataPredictTimeseries.ds <= end_dt,
+                DataPredictTimeseries.model_id == latest_model_query.c.model_id
+            )
+            .all()
+        )
+
+        return {
+            "prediction": predicts,
+            "count": len(predicts),
+        }
+
+    except ValueError as e:
+        logging.error(e)
+        raise HTTPException(status_code=400, detail="Format de date invalide. Utilisez YYYY-MM-DD")
+
+    except HTTPException as e:
+        logging.error(e)
+        raise
+
+    except Exception as e:
+        logging.error(e)
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        logging.info("Fin de predictions")
+        db_manager.session.close()
+
 @app.get("/version")
 async def version():
+    """
+    Retourne la version logicielle actuelle de l'API.
+
+    - **En local** : retourne "0.0.0"
+    - **En production (build CICD)** : retourne le commit ID du build
+    - **Exemple de réponse** : {"version" : "0.0.0"} ou {"version" : "a1b2c3d4"}
+    """
     return {"version": api_version}
