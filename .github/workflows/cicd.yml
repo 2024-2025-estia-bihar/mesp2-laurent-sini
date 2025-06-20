@@ -66,18 +66,23 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Test API endpoint
+      - name: Test API endpoint'
         id: version_test
         uses: fjogeleit/http-request-action@v1
         with:
           url: "http://localhost:8000/version"
           method: "GET"
           timeout: 10000
-          expectedStatus: 200
           ignoreStatusCodes: "400-599"
 
       - name: Check version in response
         run: |
+          # Vérifier le code de statut
+          if [ "${{ steps.version_test.outputs.statusCode }}" != "200" ]; then
+            echo "Statut HTTP invalide: ${{ steps.version_test.outputs.statusCode }}"
+            exit 1
+          fi
+          
           if [ "$(echo '${{ steps.version_test.outputs.response }}' | jq -r '.version')" != "${{ github.sha }}" ]; then
             echo "Incompatibilité de version : attendu ${{ github.sha }}, reçu $(echo '${{ steps.version_test.outputs.response }}' | jq -r '.version')"
             exit 1
