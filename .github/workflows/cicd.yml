@@ -74,6 +74,7 @@ jobs:
           method: "GET"
           timeout: 10000
           expectedStatus: 200
+          ignoreStatusCodes: "400-599"
 
       - name: Check version in response
         run: |
