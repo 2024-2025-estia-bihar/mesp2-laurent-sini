@@ -4,8 +4,10 @@ FROM python:3.12
 # Définir le répertoire de travail dans le conteneur
 WORKDIR /app
 
+ARG API_VERSION=0.0.0
+RUN echo "${API_VERSION}" > /app/version.txt
+
 ENV APP_ENV='dev'
-ENV API_VERSION=0.0.0
 
 ENV POSTGRES_USER=user
 ENV POSTGRES_PASSWORD=password

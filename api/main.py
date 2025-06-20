@@ -15,6 +15,7 @@ from sqlalchemy import func
 
 from model.entity.data_predict_timeseries import DataPredictTimeseries
 from model.entity.data_process_timeseries import DataProcessTimeseries
+from model.helpers.api_helper import location_files_version
 from model.repository.logging_timeseries_repository import LoggingTimeseriesRepository
 from model.services.database_manager import DatabaseManager
 
@@ -197,4 +198,11 @@ async def version():
     - **En production (build CICD)** : retourne le commit ID du build
     - **Exemple de réponse** : {"version" : "0.0.0"} ou {"version" : "a1b2c3d4"}
     """
-    return {"version": api_version}
+    API_VERSION = "0.0.0"
+    try:
+        with open(location_files_version()) as f:
+            API_VERSION = f.read().strip()
+    except FileNotFoundError:
+        pass # Fichier absent, on garde la valeur par défaut
+
+    return {"version": API_VERSION}
