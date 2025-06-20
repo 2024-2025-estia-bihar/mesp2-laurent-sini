@@ -1,0 +1,86 @@
+name: CI/CD Pipeline (Master)
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.CR_PAT }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          build-args: |
+            API_VERSION=${{ github.sha }}
+
+  integration-tests:
+    needs: [ build-and-push ]
+    runs-on: ubuntu-24.04
+    env:
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_DB: 'mesp'
+    services:
+      db:
+        image: postgres:17.5-alpine
+        env:
+          POSTGRES_USER: $POSTGRES_USER
+          POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+          POSTGRES_DB: $POSTGRES_DB
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.CR_PAT }}
+
+      - name: Start API with dependencies
+        run: |
+          docker run -d \
+            --name api \
+            -e POSTGRES_HOST=db \
+            -e POSTGRES_USER=$POSTGRES_USER \
+            -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
+            -e POSTGRES_DB=$POSTGRES_DB \
+            -p 8000:8000 \
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Test API endpoint
+        id: version_test
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: "http://localhost:8000/version"
+          method: "GET"
+          timeout: 10000
+
+      - name: Check version in response
+        run: |
+          if [ "$(echo '${{ steps.version_test.outputs.response }}' | jq -r '.version')" != "${{ github.sha }}" ]; then
+            echo "Incompatibilité de version : attendu ${{ github.sha }}, reçu $(echo '${{ steps.version_test.outputs.response }}' | jq -r '.version')"
+            exit 1
+          fi
+          echo "L’endpoint /version est correct."

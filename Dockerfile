@@ -8,11 +8,8 @@ ARG API_VERSION=0.0.0
 RUN echo "${API_VERSION}" > /app/version.txt
 
 ENV APP_ENV='dev'
-
-ENV POSTGRES_USER=user
-ENV POSTGRES_PASSWORD=password
-ENV POSTGRES_HOST=localhost
-ENV POSTGRES_DB=mesp
+ENV POSTGRES_HOST='db'
+ENV POSTGRES_DB='mesp'
 
 COPY ./requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
