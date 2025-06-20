@@ -1,6 +1,9 @@
-name: CI/CD Pipeline
+name: CI/CD Pipeline (Master)
 
-on: [push]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   build-and-push:
