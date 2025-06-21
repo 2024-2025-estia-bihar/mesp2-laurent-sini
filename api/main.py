@@ -4,8 +4,8 @@ Ce script doit contenir l'implémentation des endpoints pour les fonctionnalité
 - Récupération des prédictions pour une date donnée,
 - Récupération des prédictions combinées avec des données réelles observées pour une période donnée
 """
-import logging
 import os
+import platform
 from datetime import datetime, time, timedelta
 from urllib.parse import unquote
 
@@ -18,12 +18,41 @@ from model.entity.data_process_timeseries import DataProcessTimeseries
 from model.helpers.api_helper import location_files_version
 from model.repository.logging_timeseries_repository import LoggingTimeseriesRepository
 from model.services.database_manager import DatabaseManager
+from model.services.secure_logger_manager import SecureLoggerManager
 
 load_dotenv()
 api_version = os.getenv("API_VERSION", "0.0.0")
 nb_days_predict = 7
 
-app = FastAPI()
+secure_log = SecureLoggerManager().get_logger()
+app = FastAPI(
+    title="MESP2 API",
+    description="API de prédiction de séries temporelles météo (projet MESP2)",
+    version=api_version
+)
+
+@app.get("/", tags=["Informations"])
+async def root():
+    """
+    Route d'accueil de l'API.
+    Donne un aperçu du projet, des endpoints clés et de l'environnement.
+    """
+    return {
+        "projet": "MESP2 Laurent SINI",
+        "description": (
+            "Système de prédiction de séries temporelles utilisant XGBoost pour prédire la température "
+            "à partir de données météorologiques. Pipeline MLOps complet (collecte, entraînement, prédiction, API REST)."
+        ),
+        "api_version": api_version,
+        "python_version": platform.python_version(),
+        "endpoints": [
+            {"path": "/docs", "description": "Documentation Swagger"},
+            {"path": "/predictions/{date}", "description": "Prédictions pour une date donnée"},
+            {"path": "/predictions/combined/{start_date}/{end_date}", "description": "Données combinées (réelles + prédictions)"},
+            {"path": "/version", "description": "Version de l’API"},
+        ],
+        "contact": "contact@thodler.art"
+    }
 
 @app.get("/predictions/combined/{start_date}/{end_date}", responses={
              200: {"description": "Données combinées récupérées avec succès"},
@@ -96,14 +125,14 @@ async def combined_predictions(start_date: str, end_date: str):
         return {"combined": combined_list}
 
     except ValueError as e:
-        logging.error(e)
+        secure_log.error(e)
         raise HTTPException(status_code=400, detail="Format de date invalide. Utilisez YYYY-MM-DD")
 
     except Exception as e:
-        logging.error(e)
+        secure_log.error(e)
         return {"combined": [], "error": str(e)}
     finally:
-        logging.info("Fin de combined_predictions")
+        secure_log.info("Fin de combined_predictions")
         db_manager.session.close()
 
 
@@ -124,8 +153,6 @@ async def predictions(date: str):
     db_manager = DatabaseManager()
     try:
         db_manager.init_connection()
-
-
 
         target_date = datetime.strptime(date, "%Y-%m-%d").date()
         today = target_date.today()
@@ -175,18 +202,18 @@ async def predictions(date: str):
         }
 
     except ValueError as e:
-        logging.error(e)
+        secure_log.error(e)
         raise HTTPException(status_code=400, detail="Format de date invalide. Utilisez YYYY-MM-DD")
 
     except HTTPException as e:
-        logging.error(e)
+        secure_log.error(e)
         raise
 
     except Exception as e:
-        logging.error(e)
+        secure_log.error(e)
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        logging.info("Fin de predictions")
+        secure_log.info("Fin de predictions")
         db_manager.session.close()
 
 @app.get("/version")

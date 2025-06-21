@@ -2,7 +2,6 @@ import logging
 from datetime import datetime
 
 from model.entity.logging_timeseries import LoggingTimeseries
-from model.helpers.notebook_helper import generate_version
 from model.repository.logging_timeseries_repository import LoggingTimeseriesRepository
 
 
@@ -10,7 +9,7 @@ class LoggerManager:
     def __init__(self, session):
         self.repository = LoggingTimeseriesRepository(session)
 
-    def log_training(self, model_name, score, params, results, model_id=generate_version()):
+    def log_training(self, model_name, score, params, results, model_id):
         """Log les paramètres d'entraînement d'un modèle"""
         tuner_logging = LoggingTimeseries(
             timestamp=datetime.now(),
