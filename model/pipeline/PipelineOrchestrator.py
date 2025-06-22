@@ -1,4 +1,7 @@
 import logging
+
+from model.services.secure_logger_manager import SecureLoggerManager
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
@@ -29,10 +32,10 @@ class PipelineOrchestrator:
 
     def run(self):
 
+        secure_log = SecureLoggerManager('pipeline_orchestrator').get_logger()
+        secure_log.info("Lancement du pipeline")
 
-        logging.info("Lancement du pipeline")
-
-        logging.info("Etape 1 - Nettoyage des données")
+        secure_log.info("Etape 1 - Nettoyage des données")
         df = self.data_manager.loadData()
         df = self.data_manager.cleanData(df)
         df = self.data_manager.transformData(df)
@@ -40,22 +43,22 @@ class PipelineOrchestrator:
         self.data_manager.saveData(df)
         train, test = self.data_manager.splitData(df)
 
-        logging.info("Etape 2 - Recherche des hyperparameters")
+        secure_log.info("Etape 2 - Recherche des hyperparameters")
         self.model_manager.tune(train)
 
-        logging.info("Etape 3 - Recherche des features")
+        secure_log.info("Etape 3 - Recherche des features")
         train, test = self.feature_manager.transformData(train, test)
 
         best_n_lags=self.model_manager.params.best_params['n_lags']
         X_train, y_train, X_test, y_test = self.feature_manager.lagger(train, test, best_n_lags)
 
-        logging.info("Etape 4 - Entrainement")
+        secure_log.info("Etape 4 - Entrainement")
         self.model_manager.train(X_train, y_train)
 
-        logging.info("Etape 5 - Evaluation")
+        secure_log.info("Etape 5 - Evaluation")
         results, _ = self.model_manager.eval(X_test, y_test)
 
-        logging.info("Etape 6 - Results")
+        secure_log.info("Etape 6 - Results")
         self.model_manager.save()
         self.logger_database.log_training(
             'XGBRegressor',
@@ -65,7 +68,7 @@ class PipelineOrchestrator:
             self.model_manager.model_id,
         )
 
-        logging.info("Finished pipeline")
+        secure_log.info("Finished pipeline")
 
 
 if __name__ == '__main__':

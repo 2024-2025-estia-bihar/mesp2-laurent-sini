@@ -3,6 +3,7 @@ import logging
 import uuid
 
 from model.repository.logging_timeseries_repository import LoggingTimeseriesRepository
+from model.services.secure_logger_manager import SecureLoggerManager
 
 logging.basicConfig(
     level=logging.INFO,
@@ -34,27 +35,29 @@ class PipelineBatchPredictor:
 
     def run(self):
 
-        logging.info("Lancement du pipeline")
+        secure_log = SecureLoggerManager('pipeline_batch').get_logger()
 
-        logging.info("Etape 1 - Nettoyage des données")
+        secure_log.info("Lancement du pipeline")
+
+        secure_log.info("Etape 1 - Nettoyage des données")
         df = self.data_manager.loadData()
         df = self.data_manager.cleanData(df)
         df = self.data_manager.transformData(df)
 
-        logging.info("Etape 2 - Transformation des données")
+        secure_log.info("Etape 2 - Transformation des données")
         data_future = self.data_manager.loadFutureData(df)
         train_future, test_future = self.feature_manager.transformData(df, data_future)
 
         best_n_lags = self.model_manager.params['n_lags']
         X_train, y_train, X_test, y_test = self.feature_manager.lagger(train_future, test_future, best_n_lags)
 
-        logging.info("Etape 3 - Evaluation")
+        secure_log.info("Etape 3 - Evaluation")
         self.model_manager.loadBestModel()
         results, predict = self.model_manager.eval(X_test, y_test)
 
         self.data_manager.savePredict(predict, self.model_manager.model_id)
 
-        logging.info("Finished pipeline")
+        secure_log.info("Finished pipeline")
 
 if __name__ == '__main__':
     from model.pipeline.timeseries.DataManager import DataManager

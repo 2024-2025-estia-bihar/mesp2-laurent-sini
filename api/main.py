@@ -15,16 +15,16 @@ from sqlalchemy import func
 
 from model.entity.data_predict_timeseries import DataPredictTimeseries
 from model.entity.data_process_timeseries import DataProcessTimeseries
-from model.helpers.api_helper import location_files_version
+from model.helpers.api_helper import get_version
 from model.repository.logging_timeseries_repository import LoggingTimeseriesRepository
 from model.services.database_manager import DatabaseManager
 from model.services.secure_logger_manager import SecureLoggerManager
 
 load_dotenv()
-api_version = os.getenv("API_VERSION", "0.0.0")
+api_version = get_version()
 nb_days_predict = 7
 
-secure_log = SecureLoggerManager().get_logger()
+secure_log = SecureLoggerManager('api').get_logger()
 app = FastAPI(
     title="MESP2 API",
     description="API de prédiction de séries temporelles météo (projet MESP2)",
@@ -222,14 +222,7 @@ async def version():
     Retourne la version logicielle actuelle de l'API.
 
     - **En local** : retourne "0.0.0"
-    - **En production (build CICD)** : retourne le commit ID du build
-    - **Exemple de réponse** : {"version" : "0.0.0"} ou {"version" : "a1b2c3d4"}
+    - **En production (build CICD)** : retourne le commit ID du build ou la version
+    - **Exemple de réponse** : {"version" : "0.0.0"} ou {"version" : "a1b2c3d4"} ou {"version" : "v1.0.0"}
     """
-    API_VERSION = "0.0.0"
-    try:
-        with open(location_files_version()) as f:
-            API_VERSION = f.read().strip()
-    except FileNotFoundError:
-        pass # Fichier absent, on garde la valeur par défaut
-
-    return {"version": API_VERSION}
+    return {"version": api_version}

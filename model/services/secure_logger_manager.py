@@ -3,15 +3,19 @@ import os
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+from model.helpers.api_helper import get_version
+
 
 class SecureLoggerManager:
-    def __init__(self):
-        self.logger = logging.getLogger('api_logger')
+    def __init__(self, application_logger: str):
+        self.application_logger = application_logger
+
+        self.logger = logging.getLogger(self.application_logger)
         self.logger.setLevel(logging.INFO)
 
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
-        log_path = Path("monitoring/logs/api.log")
+        log_path = Path(f"monitoring/logs/{self.application_logger}.log")
         log_path.parent.mkdir(parents=True, exist_ok=True)
 
         file_handler = RotatingFileHandler(
@@ -42,7 +46,11 @@ class SecureLoggerManager:
             handler = LokiHandler(
                 url=os.getenv('LOKI_URL') + "/loki/api/v1/push",
                 auth=(os.getenv("LOKI_USER"), os.getenv("LOKI_PASSWORD")),
-                tags={"application": "API-MESP2"},
+                tags={
+                    "service": self.application_logger,
+                    "env": os.getenv('APP_ENV', 'dev'),
+                    "api_version": get_version()
+                },
                 version="1"
             )
 
