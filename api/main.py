@@ -6,7 +6,7 @@ Ce script doit contenir l'implémentation des endpoints pour les fonctionnalité
 """
 import os
 import platform
-from datetime import datetime, time, timedelta
+from datetime import datetime, time, timedelta, date
 from urllib.parse import unquote
 
 from dotenv import load_dotenv
@@ -31,7 +31,30 @@ app = FastAPI(
     version=api_version
 )
 
-@app.get("/", tags=["Informations"])
+@app.get("/",
+         tags=["Informations"],
+         responses={
+             200: {
+                 "description": "Accueil de l'API avec informations système",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "projet": "MESP2 Laurent SINI",
+                             "description": "Système de prédiction de séries temporelles...",
+                             "api_version": "v1.2.0",
+                             "python_version": "3.10.12",
+                             "endpoints": [
+                                 {"path": "/docs", "description": "Documentation Swagger"},
+                                 {"path": "/predictions/{date}", "description": "Prédictions pour une date donnée"},
+                                 {"path": "/predictions/combined/{start_date}/{end_date}", "description": "Données combinées (réelles + prédictions)"},
+                                 {"path": "/version", "description": "Version de l'API"},
+                             ],
+                             "contact": "contact@thodler.art"
+                         }
+                     }
+                 }
+             }
+         })
 async def root():
     """
     Route d'accueil de l'API.
@@ -54,9 +77,38 @@ async def root():
         "contact": "contact@thodler.art"
     }
 
-@app.get("/predictions/combined/{start_date}/{end_date}", responses={
-             200: {"description": "Données combinées récupérées avec succès"},
-             400: {"description": "Format de date invalide. Utiliser YYYY-MM-DD"}
+@app.get("/predictions/combined/{start_date}/{end_date}",
+         responses={
+             200: {
+                 "description": "Données combinées récupérées avec succès",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "combined": [
+                                 {"ds": "2025-06-01T00:00:00", "y": 42.1, "y_pred": 41.8},
+                                 {"ds": "2025-06-02T00:00:00", "y": 43.2, "y_pred": 42.9}
+                             ]
+                         }
+                     }
+                 }
+             },
+             400: {
+                 "description": (
+                     "Requête invalide. Causes possibles :\n"
+                     "1. Format de date incorrect (doit être YYYY-MM-DD)\n"
+                     "2. Date de début > Date de fin\n"
+                     "3. Dates futures ou égales à aujourd'hui"
+                 ),
+                 "content": {
+                     "application/json": {
+                         "examples": {
+                             "invalid_format": {"value": {"detail": "Format de date invalide. Utilisez YYYY-MM-DD"}},
+                             "invalid_order": {"value": {"detail": "La date de début doit être antérieure à la date de fin"}},
+                             "future_date": {"value": {"detail": "Les prédictions ne peuvent être faites que sur des dates passées"}}
+                         }
+                     }
+                 }
+             }
          })
 async def combined_predictions(start_date: str, end_date: str):
     """
@@ -66,12 +118,22 @@ async def combined_predictions(start_date: str, end_date: str):
     - **end_date** : Date de fin au format YYYY-MM-DD (exemple: 2025-06-07)
     - **Retourne** : Une liste d'objets contenant, pour chaque timestamp, la valeur réelle observée et la prédiction associée.
     """
-
     db_manager = DatabaseManager()
     try:
         db_manager.init_connection()
+
+        if start_date > end_date:
+            raise HTTPException(
+                status_code=400,
+                detail="La date de début doit être inférieure ou égale à la date de fin."
+            )
+
         start_dt = datetime.strptime(start_date, "%Y-%m-%d").date()
         end_dt = datetime.strptime(end_date, "%Y-%m-%d").date()
+
+        if start_dt >= date.today() or end_dt >= date.today():
+            raise HTTPException(status_code=400, detail="Les dates doivent être strictement dans le passé")
+
         start_dt_dt = datetime.combine(start_dt, time.min)
         end_dt_dt = datetime.combine(end_dt, time.max)
 
@@ -137,10 +199,43 @@ async def combined_predictions(start_date: str, end_date: str):
 
 
 
-@app.get("/predictions/{date:path}", responses={
-    400: {"description": "La date est dans le passé ou trop loin dans le futur"},
-    200: {"description": "Prédictions récupérées avec succès"}
-})
+@app.get("/predictions/{date:path}",
+         responses={
+             200: {
+                 "description": "Prédictions récupérées avec succès",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "prediction": [
+                                 {"ds": "2025-06-20T00:00:00", "y_pred": 42.1},
+                                 {"ds": "2025-06-20T01:00:00", "y_pred": 42.3}
+                             ],
+                             "count": 2
+                         }
+                     }
+                 }
+             },
+             400: {
+                 "description": (
+                     "Requête invalide. Causes possibles :\n"
+                     "1. Format de date incorrect (doit être YYYY-MM-DD)\n"
+                     "2. Date dans le passé\n"
+                     "3. Date trop éloignée dans le futur"
+                 ),
+                 "content": {
+                     "application/json": {
+                         "examples": {
+                             "invalid_format": {"value": {"detail": "Format de date invalide. Utilisez YYYY-MM-DD"}},
+                             "past_date": {"value": {"detail": "Les dates passées ne sont pas des prédictions"}},
+                             "future_limit": {"value": {"detail": "Aucune prévision disponible pour cette date. Limite: 7 jours dans le futur"}}
+                         }
+                     }
+                 }
+             },
+             500: {
+                 "description": "Erreur interne du serveur"
+             }
+         })
 async def predictions(date: str):
     """
     Récupère les prédictions pour une date donnée.
@@ -216,7 +311,21 @@ async def predictions(date: str):
         secure_log.info("Fin de predictions")
         db_manager.session.close()
 
-@app.get("/version")
+@app.get("/version",
+         responses={
+             200: {
+                 "description": "Version logicielle de l'API récupérée avec succès",
+                 "content": {
+                     "application/json": {
+                         "examples": {
+                             "local": {"value": {"version": "0.0.0"}},
+                             "production": {"value": {"version": "a1b2c3d4"}},
+                             "tagged": {"value": {"version": "v1.0.0"}}
+                         }
+                     }
+                 }
+             }
+         })
 async def version():
     """
     Retourne la version logicielle actuelle de l'API.
