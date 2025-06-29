@@ -39,7 +39,7 @@ class OpenMeteoService:
             time_stamps = [start_time + i * interval for i in range(len(temperature_np))]
 
             # Conversion en datetime
-            base_date = datetime(1970, 1, 1)  # Les timestamps sont en secondes depuis epoch
+            base_date = datetime(1970, 1, 1)
             dates = [base_date + timedelta(seconds=ts) for ts in time_stamps]
 
             return pd.DataFrame({

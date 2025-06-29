@@ -2,11 +2,8 @@ import logging
 import os
 
 import sys
-from datetime import datetime, timedelta
-
-from model.services.secure_logger_manager import SecureLoggerManager
-
 sys.path.append("./")
+from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 
@@ -19,6 +16,7 @@ from model.repository.logging_timeseries_repository import LoggingTimeseriesRepo
 
 from model.services.database_manager import DatabaseManager
 from model.services.open_meteo_service import OpenMeteoService
+from model.services.secure_logger_manager import SecureLoggerManager
 
 # Chargement des variables d'environnement postgres
 load_dotenv()
@@ -51,9 +49,7 @@ last_row = data_reel_repository.get_last_row()
 
 if last_row is not None:
     start_date = last_row.time + timedelta(days=1)
-    print(start_date)
     end_date = (datetime.today() - timedelta(days=2)).date()
-    print(start_date)
 
     if start_date.date() > end_date:
         secure_logger.warning("Les données sont déjà à jour. Arrêt du script.")
