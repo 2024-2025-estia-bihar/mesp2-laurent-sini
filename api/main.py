@@ -11,7 +11,7 @@ from urllib.parse import unquote
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
-from sqlalchemy import func
+from sqlalchemy import func, and_
 
 from model.entity.data_predict_timeseries import DataPredictTimeseries
 from model.entity.data_process_timeseries import DataProcessTimeseries
@@ -137,38 +137,49 @@ async def combined_predictions(start_date: str, end_date: str):
         start_dt_dt = datetime.combine(start_dt, time.min)
         end_dt_dt = datetime.combine(end_dt, time.max)
 
-        # Récupérer le modèle champion
-        champion = LoggingTimeseriesRepository(db_manager.session).get_best_model()
-
-        latest_model_query = (
-            db_manager.session.query(
-                DataPredictTimeseries.model_id,
-                func.max(DataPredictTimeseries.created_at).label('max_created_at')
+        sub_obs = (
+            db_manager.session.query(DataProcessTimeseries.ds)
+            .filter(
+                DataProcessTimeseries.ds >= start_dt_dt,
+                DataProcessTimeseries.ds <= end_dt_dt
             )
-            .filter(DataPredictTimeseries.model_id.contains(champion.model))
-            .group_by(DataPredictTimeseries.model_id)
-            .order_by(func.max(DataPredictTimeseries.created_at).desc())
-            .limit(1)
+            .group_by(DataProcessTimeseries.ds)
             .subquery()
         )
 
         # Récupérer les données réelles pour ces timestamps exacts
         observed = (
             db_manager.session.query(DataProcessTimeseries)
-            .filter(
-                DataProcessTimeseries.ds >= start_dt_dt,
-                DataProcessTimeseries.ds <= end_dt_dt
+            .join(
+                sub_obs,
+                and_(
+                    DataProcessTimeseries.ds == sub_obs.c.ds
+                )
             )
             .all()
         )
 
         # Récupérer les prédictions
-        predicts = (
-            db_manager.session.query(DataPredictTimeseries)
+        sub_pred = (
+            db_manager.session.query(
+                DataPredictTimeseries.ds,
+                func.max(DataPredictTimeseries.created_at).label("max_created_at")
+            )
             .filter(
                 DataPredictTimeseries.ds >= start_dt_dt,
-                DataPredictTimeseries.ds <= end_dt_dt,
-                DataPredictTimeseries.model_id == latest_model_query.c.model_id
+                DataPredictTimeseries.ds <= end_dt_dt
+            )
+            .group_by(DataPredictTimeseries.ds)
+            .subquery()
+        )
+        predicts = (
+            db_manager.session.query(DataPredictTimeseries)
+            .join(
+                sub_pred,
+                and_(
+                    DataPredictTimeseries.ds == sub_pred.c.ds,
+                    DataPredictTimeseries.created_at == sub_pred.c.max_created_at
+                )
             )
             .all()
         )
@@ -176,6 +187,7 @@ async def combined_predictions(start_date: str, end_date: str):
         # Construire la réponse combinée
         combined_list = []
         for obs in observed:
+            print(obs.ds, obs.y)
             pred = next((p.y for p in predicts if p.ds == obs.ds), None)
             item = {
                 "ds": obs.ds.isoformat(),
