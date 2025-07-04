@@ -25,6 +25,9 @@ class DataManager(DataManagerInterface):
 
     def transformData(self, df: pd.DataFrame) -> pd.DataFrame :
         df = df.rename(columns={'time': 'ds', 'temperature_2m': 'y'})
+        df.set_index('ds', inplace=True)
+        df = df.resample('3h').mean()
+        df = df.reset_index()
         return df
 
     def saveData(self, df: pd.DataFrame) -> None:
@@ -44,7 +47,7 @@ class DataManager(DataManagerInterface):
         last_date = df['ds'].max() # Dernière date du dataframe
 
         # Génère les dates de la future période et crée le Dataframe
-        dates_futures = pd.date_range(start=last_date + pd.Timedelta(hours=1), periods=120, freq='3h')
+        dates_futures = pd.date_range(start=last_date + pd.Timedelta(hours=3), periods=120, freq='3h')
         X_future = pd.DataFrame({'ds': dates_futures})
 
         # Calcule les bornes à prédire
