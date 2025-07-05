@@ -112,7 +112,7 @@ async def root():
          })
 async def combined_predictions(start_date: str, end_date: str):
     """
-    Récupère les données combinées (valeurs observées et prédictions du meilleur modèle) pour une période donnée.
+    Récupère les données combinées pour une période donnée.
 
     - **start_date** : Date de début au format YYYY-MM-DD (exemple: 2025-06-01)
     - **end_date** : Date de fin au format YYYY-MM-DD (exemple: 2025-06-07)
