@@ -15,6 +15,7 @@ jobs:
       - name: Lancer les tests unitaires
         run: pytest
   build-and-push:
+    needs: [unit-tests]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
