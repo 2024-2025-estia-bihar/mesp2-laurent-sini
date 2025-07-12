@@ -80,15 +80,15 @@ graph LR
 ```
 
 ## Technologies Utilisées
-| Composant | Technologie | Usage |
-|-----------|-------------|-------|
-| API Backend | FastAPI | Endpoints de prédiction |
-| Modèle ML | XGBoost | Prédiction de séries temporelles |
-| Base de données | PostgreSQL | Stockage des données et modèles |
-| Orchestration | Docker/Docker Compose | Déploiement et environnement |
-| CI/CD | GitHub Actions | Intégration continue |
-| Feature Engineering | Feature Engine | Création de variables de lag |
-| Monitoring | Logs & Métriques | Suivi des performances |
+| Composant           | Technologie           | Usage                            |
+|---------------------|-----------------------|----------------------------------|
+| API Backend         | FastAPI               | Endpoints de prédiction          |
+| Modèle ML           | XGBoost               | Prédiction de séries temporelles |
+| Base de données     | PostgreSQL            | Stockage des données et modèles  |
+| Orchestration       | Docker/Docker Compose | Déploiement et environnement     |
+| CI/CD               | GitHub Actions        | Intégration continue             |
+| Feature Engineering | Feature Engine        | Création de variables de lag     |
+| Monitoring          | Logs & Métriques      | Suivi des performances           |
 
 ## Structure du Projet
 ```

@@ -6,6 +6,14 @@ on:
       - master
 
 jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installer les dépendances
+        run: pip install -r requirements.txt
+      - name: Lancer les tests unitaires
+        run: pytest
   build-and-push:
     runs-on: ubuntu-24.04
     permissions:

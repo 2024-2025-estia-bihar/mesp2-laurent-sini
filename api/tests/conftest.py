@@ -40,7 +40,8 @@ def mock_predictions():
     Simule 24 heures de prédictions avec DataPredictTimeseries
     """
     predictions = []
-    now = datetime.now()
+    now = datetime(2025, 6, 20, 0, 0, 0)
+
     for i in range(24):
         p = DataPredictTimeseries()
         p.ds = now + timedelta(hours=i)
@@ -55,7 +56,8 @@ def mock_observed_data():
     Simule 24 heures de données réelles avec DataProcessTimeseries
     """
     observed = []
-    now = datetime.now()
+    now = datetime(2025, 6, 20, 0, 0, 0)
+
     for i in range(24):
         d = DataProcessTimeseries()
         d.ds = now + timedelta(hours=i)

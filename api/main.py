@@ -184,6 +184,7 @@ async def combined_predictions(start_date: str, end_date: str):
             .all()
         )
 
+        print(observed)
         # Construire la réponse combinée
         combined_list = []
         for obs in observed:

@@ -63,26 +63,25 @@ def test_predictions_invalid_date_format(client):
 
 def test_combined_predictions_success(client, mock_db_session, mock_champion_model, mock_predictions,
                                       mock_observed_data):
-    with patch('api.main.LoggingTimeseriesRepository') as mock_repo:
-        mock_repo.return_value.get_best_model.return_value = mock_champion_model
-        mock_db_session.return_value.session.query.return_value.filter.return_value.all.side_effect = [
-            mock_observed_data,
-            mock_predictions
-        ]
 
-        start_date = "2025-06-20"
-        end_date = "2025-06-21"
+    mock_db_session.return_value.session.query.return_value.join.return_value.all.side_effect = [
+        mock_observed_data,
+        mock_predictions
+    ]
 
-        response = client.get(f"/predictions/combined/{start_date}/{end_date}")
+    start_date = "2025-06-20"
+    end_date = "2025-06-21"
 
-        assert response.status_code == 200
-        assert "combined" in response.json()
-        assert len(response.json()["combined"]) == len(mock_observed_data)
+    response = client.get(f"/predictions/combined/{start_date}/{end_date}")
 
-        first_item = response.json()["combined"][0]
-        assert "ds" in first_item
-        assert "y" in first_item
-        assert "y_pred" in first_item
+    assert response.status_code == 200
+    assert "combined" in response.json()
+    assert len(response.json()["combined"]) == len(mock_observed_data)
+
+    first_item = response.json()["combined"][0]
+    assert "ds" in first_item
+    assert "y" in first_item
+    assert "y_pred" in first_item
 
 
 def test_combined_predictions_invalid_date_format(client):
