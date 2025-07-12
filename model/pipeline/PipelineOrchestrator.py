@@ -60,6 +60,7 @@ class PipelineOrchestrator:
 
         secure_log.info("Etape 6 - Results")
         self.model_manager.save()
+        secure_log.info(f"Modèle sauvegardé : {self.model_manager.model_id}")
         self.logger_database.log_training(
             'XGBRegressor',
             self.model_manager.params.best_value,

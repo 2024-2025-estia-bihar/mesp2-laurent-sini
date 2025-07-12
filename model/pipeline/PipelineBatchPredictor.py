@@ -54,6 +54,7 @@ class PipelineBatchPredictor:
 
         secure_log.info("Etape 3 - Evaluation")
         self.model_manager.loadBestModel()
+        secure_log.info(f"Modèle utilisé : {self.model_manager.model_id}")
         results, predict = self.model_manager.eval(X_test, y_test)
 
         self.data_manager.savePredict(predict, self.model_manager.model_id)

@@ -86,7 +86,7 @@ class XGBoostManager(ModelManagerInterface):
             return np.mean(mse_scores)
 
         self.params = optuna.create_study(direction='minimize')
-        self.params.optimize(objective, n_trials=100, show_progress_bar=True)
+        self.params.optimize(objective, n_trials=30, show_progress_bar=True)
 
     def train(self, X_train: pd.DataFrame, y_train: pd.DataFrame):
 
@@ -120,6 +120,7 @@ class XGBoostManager(ModelManagerInterface):
 
         joblib.dump(self.model, registry)
         logging.info(f"Modèle sauvegardé : {registry}")
+
 
     def loadBestModel(self):
         root = Path(__file__).resolve().parents[3]
