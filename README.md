@@ -71,8 +71,9 @@ graph LR
 
     FD --> DB1
     DB1 --> OR
+    DB1 --> BP
     OR --> DB2
-    DB2 --> BP
+    BP --> DB2
     BP --> DB3
     DB3 --> API
     API --> Client[Client HTTP]

@@ -44,10 +44,11 @@ class PipelineBatchPredictor:
         df = self.data_manager.cleanData(df)
         df = self.data_manager.transformData(df)
 
+        self.data_manager.saveData(df)
+
         secure_log.info("Etape 2 - Transformation des données")
         data_future = self.data_manager.loadFutureData(df)
         train_future, test_future = self.feature_manager.transformData(df, data_future)
-        self.data_manager.saveData(df)
 
         best_n_lags = self.model_manager.params['n_lags']
         X_train, y_train, X_test, y_test = self.feature_manager.lagger(train_future, test_future, best_n_lags)
