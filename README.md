@@ -189,11 +189,11 @@ Il exécute séquentiellement :
 #### 2. Exécution manuelle étape par étape
 Chaque composant peut aussi être exécuté indépendamment :
 
-| Étape | Commande | Usage |
-|-------|----------|-------|
-| **Collecte** | `python ./data/fetch_data.py` | Récupère les données Open-Meteo |
-| **Entraînement** | `python -m model.pipeline.PipelineOrchestrator` | Génère et sauvegarde un nouveau modèle |
-| **Prédictions** | `python -m model.pipeline.PipelineBatchPredictor` | Calcule les prédictions pour les prochaines 24h |
+| Étape            | Commande                                          | Usage                                           |
+|------------------|---------------------------------------------------|-------------------------------------------------|
+| **Collecte**     | `python ./data/fetch_data.py`                     | Récupère les données Open-Meteo                 |
+| **Entraînement** | `python -m model.pipeline.PipelineOrchestrator`   | Génère et sauvegarde un nouveau modèle          |
+| **Prédictions**  | `python -m model.pipeline.PipelineBatchPredictor` | Calcule les prédictions pour les prochaines 24h |
 
 > **Planification** : Le batch predictor peut être automatisé via cron :
 > ```
@@ -217,22 +217,23 @@ uvicorn api.main:app --reload --port=8000
 
 #### Endpoints Disponibles
 
-| Endpoint | Méthode | Description |
-|----------|---------|-------------|
-| `/predictions/{date}` | GET | Prédictions pour une date donnée |
-| `/predictions/combined/{start_date}/{end_date}` | GET | Données combinées (réelles + prédictions) |
-| `/version` | GET | Version de l'API |
+| Endpoint                                        | Méthode | Description                               |
+|-------------------------------------------------|---------|-------------------------------------------|
+| `/predictions/{date}`                           | GET     | Prédictions pour une date donnée          |
+| `/predictions/combined/{start_date}/{end_date}` | GET     | Données combinées (réelles + prédictions) |
+| `/version`                                      | GET     | Version de l'API                          |
 
 ## Pipeline CI/CD
 
 Le pipeline CI/CD automatise :
-1. **Build** : Construction de l'image Docker
-2. **Push** : Envoi vers GitHub Container Registry (ghcr.io)
+1. **Unit Tests** : Execution des tests unitaire.
+2. **Build & Push**: Construction de l'image Docker & Envoi vers GitHub Container Registry (ghcr.io)
 3. **Tests** : Validation des endpoints
 
 Deux workflows GitHub Actions automatisent le cycle de vie du projet:
 
 - Sur push sur master:
+  - Tests unitaires 
   - Build, push et tag de l’image Docker avec le SHA du commit (ghcr.io/${{ github.repository }}:${{ github.sha }})
   - Tests d’intégration sur l’API et la base PostgreSQL
 - Sur push d’un tag:
